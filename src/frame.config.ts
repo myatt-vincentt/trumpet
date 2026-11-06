@@ -13,4 +13,4 @@
 // key: `vincentt build` refuses keys it does not know.)
 export type FrameMode = "phone" | "full";
 
-export const frame: FrameMode = "phone";
+export const frame: FrameMode = "full";

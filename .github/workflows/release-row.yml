@@ -1,0 +1,94 @@
+name: Release row
+# Re-sends ONLY the platform release row for a tag. release.yml writes the row
+# after every `latest` move; this is for re-running after a fixed MIGRATION.md
+# entry or a failed row step, without re-running release.yml, which would move
+# `latest` to whatever tag it is dispatched at, including an older one.
+#
+# It never installs, builds, moves a tag, or touches `latest`, and it has no
+# write permission on the repo. The api corrects only the newest row's note, so
+# re-sending an older tag corrects nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Bare-semver tag whose release row to re-send (e.g. 1.7.1). Run the workflow from the same tag."
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  write:
+    # This file ships into every scaffolded project; a creator's copy must not
+    # dispatch rows into the platform corpus.
+    if: github.repository == 'vincentt-xr/v2-template'
+    # The prod publisher token lives only in this environment, which admits
+    # bare-semver tags alone, so this must be run from a tag ref ("Use workflow
+    # from: <tag>"). A dispatch from main is refused before any step runs.
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The input must name the ref the run was dispatched from, so the row
+      # cannot be sent for one tag under the environment approval of another.
+      - name: Resolve the release tag
+        id: rel
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ] || [ "$REF_NAME" != "$INPUT_TAG" ]; then
+            echo "::error::run this workflow from the tag ${INPUT_TAG} (\"Use workflow from: ${INPUT_TAG}\"); it was run from ${REF_TYPE} ${REF_NAME}."
+            exit 1
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${INPUT_TAG}" >/dev/null; then
+            echo "::error::tag ${INPUT_TAG} does not exist"
+            exit 1
+          fi
+          echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-list -n1 "refs/tags/${INPUT_TAG}")" >> "$GITHUB_OUTPUT"
+
+      - name: The release tag is bare semver and on main
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: bash scripts/tag-guard.sh "$TAG"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # From origin/main, as release.yml does: the note is reviewed via PR into
+      # main and is append-only per version, so main's copy is the reviewed
+      # source for any tag, and a corrected entry lands on main, not on the tag.
+      - name: Prepare the release-row script and note from main
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-row"
+          git fetch origin main
+          git show origin/main:scripts/release-row.mjs > "$RUNNER_TEMP/release-row/release-row.mjs"
+          git show origin/main:MIGRATION.md > "$RUNNER_TEMP/release-row/MIGRATION.md"
+
+      - name: A migration note exists for the release tag
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md" --dry-run
+
+      - name: Write the platform release row
+        env:
+          RELEASE_ROWS_TARGETS: "staging=https://api.staging.vincentt.studio,prod=https://api.vincentt.studio"
+          RELEASE_PUBLISHER_TOKEN_STAGING: ${{ secrets.RELEASE_PUBLISHER_TOKEN_STAGING }}
+          RELEASE_PUBLISHER_TOKEN_PROD: ${{ secrets.RELEASE_PUBLISHER_TOKEN_PROD }}
+          # The tag's commit, as release.yml sends it.
+          GITHUB_SHA: ${{ steps.rel.outputs.sha }}
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md"

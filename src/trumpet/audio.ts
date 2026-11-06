@@ -1,5 +1,6 @@
-// The trumpet's sound engine (Web Audio): one voice (recordings, sampler.ts,
-// when there are any; otherwise the voice made in code, synth.ts), a small
+// The trumpet's sound engine (Web Audio): one voice (the recorded trumpet,
+// sampler.ts, once loaded; until then, or if they can't load, the voice made
+// in code, synth.ts), a small
 // room's echo and a gentle limiter, and a meter the studio's speakers and the
 // bell's glow move with. Silent until Start (browsers only start audio on a tap).
 //

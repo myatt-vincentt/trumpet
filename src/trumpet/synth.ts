@@ -1,5 +1,5 @@
 // The trumpet's voice made in code (no recordings): a brassy tone that plays
-// until recordings are added (sampler.ts), or if they can't load.
+// until the recordings have loaded (sampler.ts), or if they can't load.
 //
 // Two sawtooths and a narrow pulse through a low-pass filter that opens on
 // the attack (the "blat" of a tongued brass note) and settles a little darker,

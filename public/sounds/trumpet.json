@@ -1,0 +1,67 @@
+{
+  "notes": [
+    {
+      "midi": 60,
+      "loud": "/sounds/trumpet-c4-loud.m4a",
+      "soft": "/sounds/trumpet-c4-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 63,
+      "loud": "/sounds/trumpet-eb4-loud.m4a",
+      "soft": "/sounds/trumpet-eb4-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 65,
+      "loud": "/sounds/trumpet-f4-loud.m4a",
+      "soft": "/sounds/trumpet-f4-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 67,
+      "loud": "/sounds/trumpet-g4-loud.m4a",
+      "soft": "/sounds/trumpet-g4-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 70,
+      "loud": "/sounds/trumpet-bb4-loud.m4a",
+      "soft": "/sounds/trumpet-bb4-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 74,
+      "loud": "/sounds/trumpet-d5-loud.m4a",
+      "soft": "/sounds/trumpet-d5-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 77,
+      "loud": "/sounds/trumpet-f5-loud.m4a",
+      "soft": "/sounds/trumpet-f5-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 81,
+      "loud": "/sounds/trumpet-a5-loud.m4a",
+      "soft": "/sounds/trumpet-a5-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    },
+    {
+      "midi": 84,
+      "loud": "/sounds/trumpet-c6-loud.m4a",
+      "soft": "/sounds/trumpet-c6-soft.m4a",
+      "loopStart": 1.1,
+      "loopEnd": 3.1
+    }
+  ]
+}

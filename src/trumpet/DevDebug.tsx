@@ -8,6 +8,7 @@
 //   __trumpet.view("player"), __trumpet.night(true)
 //   __trumpet.look([x, y, z], [tx, ty, tz], fov)   a fixed camera (null: back)
 //   __trumpet.useRecordings(false)  the voice made in code
+//   await __trumpet.render(60, 0.7, 1)  one recorded note rendered offline (samples)
 //
 // With ?debug in the address, a small readout in the top-left corner shows
 // the note, the beat and the sound.
@@ -16,6 +17,7 @@ import { useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
 
 import { meter, samples, sound } from "./audio";
+import { sampleVoice } from "./sampler";
 import { TEMPO, type PatternId } from "./beat";
 import { cameraOverride } from "./CameraRig";
 import type { View } from "./layout";
@@ -102,6 +104,19 @@ const DevDebug = () => {
       },
       octave: (o: Octave) => setOctave(o),
       useRecordings: (on: boolean) => sound.useRecordings(on),
+      /** One recorded note (MIDI), rendered offline: its samples (mono, 48 kHz). */
+      async render(midi: number, velocity = 0.7, length = 1) {
+        const { bank } = samples;
+        if (!bank) return null;
+        const sr = 48000;
+        const c = new OfflineAudioContext(
+          1,
+          Math.ceil(sr * (length + 0.5)),
+          sr,
+        );
+        sampleVoice(c, c.destination, bank).note(midi, velocity, 0, length);
+        return Array.from((await c.startRendering()).getChannelData(0));
+      },
       view: (v: View) => setView(v),
       night: (on: boolean) => setNight(on),
       look(pos: number[] | null, target: number[] = [0, 1.3, 0], fov = 40) {

@@ -7,6 +7,7 @@ import { sound } from "./audio";
 import { TEMPO, type PatternId } from "./beat";
 import { VIEWS, type View } from "./layout";
 import { noteHue, type Choice, type NoteId, type Octave } from "./notes";
+import type { Mode as SongMode, Session } from "./session";
 
 export type PlaySource = "hands" | "pointer" | "keys";
 
@@ -54,6 +55,25 @@ export const trumpet = {
   downbeats: 0,
   /** The beat card (pattern and tempo) is open. */
   beatCard: false,
+
+  // Songs.
+  /** The songs card is open. */
+  songCard: false,
+  /** Play runs slower (0.75×). */
+  slow: false,
+  /** The song being learnt or played (null: free play). */
+  session: null as Session | null,
+  /** The note to show next in a song, or null. */
+  target: null as NoteId | null,
+  /** A song just finished: its stars (performance.now() ms). */
+  finish: null as {
+    id: string;
+    mode: SongMode;
+    stars: number;
+    at: number;
+  } | null,
+  /** The latest right note and hint in a song (performance.now() ms; seq to replay). */
+  fx: { goodAt: -1e9, goodSeq: 0, perfect: false, hintAt: -1e9, hintSeq: 0 },
 
   /** The latest notes (the valves, the bell and the lights read the ones they haven't seen). */
   events: [] as NoteEvent[],

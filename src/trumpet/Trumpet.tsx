@@ -1,6 +1,7 @@
 // The trumpet:
 //   - its three valves press down for the note that sounds (C and G open,
-//     D 1+3, E 1+2, F 1, A 1+2, B 2) and come back up when it stops or rests
+//     D 1+3, E 1+2, F 1, A 1+2, B 2) and come back up when it stops or rests;
+//     learning a song, the next note's valves wait pressed part way
 //   - each note lights the bell from inside and sends a gold sound ring out of
 //     it; the ring widens and fades to warm white as it travels
 //   - in Front it floats side-on at chest height; in Player and Close it is
@@ -41,8 +42,11 @@ export const rig = {
   press: [0, 0, 0],
 };
 
-/** A valve goes down and comes back up with these time constants (s). */
-const VALVE = { down: 0.025, up: 0.045 };
+/**
+ * A valve goes down and comes back up with these time constants (s); a
+ * preview (Learn, the next note) presses it this far.
+ */
+const VALVE = { down: 0.025, up: 0.045, preview: 0.4 };
 
 /**
  * The bell's inner glow: where (the trumpet's frame), its size (m), colour,
@@ -274,11 +278,18 @@ export const Trumpet = () => {
 
     // The valves: down for the sounding note, up when it stops.
     const sounding = trumpet.sounding !== null && now < trumpet.soundingUntil;
-    const want = valvesDown(sounding ? trumpet.sounding! : "rest");
+    // Learning a song, between notes the hand rests on the next note's
+    // valves, pressed part way.
+    const preview =
+      !sounding && trumpet.session?.mode === "learn" && trumpet.target !== null;
+    let want = valvesDown("rest");
+    if (sounding) want = valvesDown(trumpet.sounding!);
+    else if (preview) want = valvesDown(trumpet.target!);
+    const depth = sounding ? 1 : VALVE.preview;
     want.forEach((down, i) => {
       const tc = down ? VALVE.down : VALVE.up;
       rig.press[i] +=
-        ((down ? 1 : 0) - rig.press[i]) * (1 - Math.exp(-dt / tc));
+        ((down ? depth : 0) - rig.press[i]) * (1 - Math.exp(-dt / tc));
     });
     if (!parts) return;
     parts.valves.forEach((v, i) => {

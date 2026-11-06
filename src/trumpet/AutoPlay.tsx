@@ -4,7 +4,8 @@
 // (it is tongued again on the new note); the rest silences it on the next
 // beat while the beat goes on. Taking the hand away for half a second stops
 // the beat after the current beat, and the last note finishes (a held Long
-// note ends with the beat); bringing it back starts a new bar.
+// note ends with the beat); bringing it back starts a new bar. While a song
+// runs, the song plays instead (SongPlayer.tsx).
 //
 // Each note is handed to the audio clock about 0.1 s ahead, so the time stays
 // steady whatever the frame rate; the valves, the bell, the rings and the
@@ -58,7 +59,12 @@ export const AutoPlay = () => {
     const want =
       trumpet.entered && (trumpet.autoPlay || perf - hands.seenAt <= LOST);
 
-    if (now !== null) {
+    // A song plays its own notes (SongPlayer.tsx): the free beat waits.
+    if (trumpet.session && beat.running) {
+      beat.reset();
+      s.sounding = null;
+    }
+    if (now !== null && !trumpet.session) {
       if (s.pattern !== trumpet.pattern || s.bpm !== trumpet.bpm) {
         s.pattern = trumpet.pattern;
         s.bpm = trumpet.bpm;

@@ -1,10 +1,11 @@
 // The page UI, minimal, on Night glass:
 //   - your camera, top right (CameraFrame.tsx): tap it to tuck it away; a
 //     small camera button then sits in the corner to bring it back
-//   - one floating dock, bottom centre, icons only: play / stop the beat, the
-//     beat (pattern and tempo), the octave, the view (front, player, close),
-//     day / night, and how to play. A small label shows over a button on
-//     hover, or for a moment after a tap.
+//   - one floating dock, bottom centre, icons only: the songs (♪), play /
+//     stop the beat, the beat (pattern and tempo), the octave, the view
+//     (front, player, close), day / night, and how to play. While a song
+//     runs, ♪ stops it and the beat buttons wait. A small label shows over a
+//     button on hover, or for a moment after a tap.
 //   - the sign strip just above the dock (SignStrip.tsx)
 //   - over your camera, while your hand is read: a small gold tag with the
 //     sign and its note
@@ -35,6 +36,8 @@ import {
 import { CHOICES, label, signOf } from "./notes";
 import { hands } from "./Hands";
 import { SignIcon, SignStrip, STRIP_CSS } from "./SignStrip";
+import { stopSong } from "./SongPlayer";
+import { NoteIcon, SONG_CSS, SongUI, StopIcon } from "./SongUI";
 import {
   closeHowTo,
   INTRO_CARD_MS,
@@ -97,6 +100,7 @@ const CSS = `
   border-radius: 999px; pointer-events: none; color: #fff; font: 650 12px/1 system-ui, -apple-system, sans-serif;
   transition: opacity 220ms ${EASE}; }
 .tp-tag svg { color: ${GHOST_COLOR}; }
+.tp-tag.show { box-shadow: inset 0 0 0 1.5px ${GHOST_COLOR}; }
 .vl-howto-back { position: absolute; inset: 0; pointer-events: auto; background: rgb(10 10 14 / .25);
   animation: vl-fade 260ms ${EASE} both; }
 @keyframes vl-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -220,6 +224,14 @@ const Pic = ({ children }: { children: ReactNode }) => (
   </svg>
 );
 
+/** Two notes: the songs. */
+const PicSongs = () => (
+  <Pic>
+    <path d="M9 18V5l11-2v13" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="17.5" cy="16" r="2.5" />
+  </Pic>
+);
 /** One open hand up inside the camera frame. */
 const PicHand = () => (
   <Pic>
@@ -318,6 +330,11 @@ const STEPS: Step[] = [
     key: "pattern",
     pic: <PicPattern />,
     text: "Choose the beat, the tempo and the octave in the dock",
+  },
+  {
+    key: "songs",
+    pic: <PicSongs />,
+    text: "Songs (♪): Learn waits for each sign, Play keeps time for stars",
   },
   {
     key: "touch",
@@ -423,38 +440,68 @@ export const Hud = () => {
   // No camera picture (none, or refused): the corner says how to play instead.
   const camera = useXRReady();
   const noCamera = trumpet.entered && !camera;
+  // Learning a song, the tag over your camera shows the sign to make.
+  const learning = trumpet.session?.mode === "learn" && trumpet.target !== null;
+  const tagged = learning ? trumpet.target! : trumpet.choice;
 
+  // While a song runs it sets the beat and the octave: those buttons wait.
+  const freeButtons: DockButton[] = trumpet.session
+    ? []
+    : [
+        {
+          id: "play",
+          label: trumpet.autoPlay ? "Stop the beat (P)" : "Play the beat (P)",
+          icon: trumpet.autoPlay ? <PauseIcon /> : <PlayIcon />,
+          on: trumpet.autoPlay,
+          act: toggleAutoPlay,
+        },
+        {
+          id: "beat",
+          label: `Beat: ${PATTERN[trumpet.pattern].label}, ${trumpet.bpm} BPM`,
+          icon: <BeatIcon />,
+          mark: PATTERN_MARK[trumpet.pattern],
+          on: trumpet.beatCard,
+          act: () => {
+            trumpet.beatCard = !trumpet.beatCard;
+            if (trumpet.beatCard) closeHowTo();
+            trumpet.changed();
+          },
+        },
+        {
+          id: "octave",
+          label:
+            trumpet.octave === "low"
+              ? "Octave: Low (C4–B4)"
+              : "Octave: High (C5–B5)",
+          icon: <OctaveIcon />,
+          mark: trumpet.octave === "low" ? "L" : "H",
+          on: trumpet.octave === "high",
+          act: () => setOctave(trumpet.octave === "low" ? "high" : "low"),
+        },
+      ];
   const buttons: DockButton[] = [
-    {
-      id: "play",
-      label: trumpet.autoPlay ? "Stop the beat (P)" : "Play the beat (P)",
-      icon: trumpet.autoPlay ? <PauseIcon /> : <PlayIcon />,
-      on: trumpet.autoPlay,
-      act: toggleAutoPlay,
-    },
-    {
-      id: "beat",
-      label: `Beat: ${PATTERN[trumpet.pattern].label}, ${trumpet.bpm} BPM`,
-      icon: <BeatIcon />,
-      mark: PATTERN_MARK[trumpet.pattern],
-      on: trumpet.beatCard,
-      act: () => {
-        trumpet.beatCard = !trumpet.beatCard;
-        if (trumpet.beatCard) closeHowTo();
-        trumpet.changed();
-      },
-    },
-    {
-      id: "octave",
-      label:
-        trumpet.octave === "low"
-          ? "Octave: Low (C4–B4)"
-          : "Octave: High (C5–B5)",
-      icon: <OctaveIcon />,
-      mark: trumpet.octave === "low" ? "L" : "H",
-      on: trumpet.octave === "high",
-      act: () => setOctave(trumpet.octave === "low" ? "high" : "low"),
-    },
+    trumpet.session
+      ? {
+          id: "songs",
+          label: "Stop song",
+          icon: <StopIcon />,
+          on: true,
+          act: stopSong,
+        }
+      : {
+          id: "songs",
+          label: "Songs",
+          icon: <NoteIcon />,
+          on: trumpet.songCard,
+          act: () => {
+            trumpet.songCard = !trumpet.songCard;
+            trumpet.beatCard = false;
+            trumpet.finish = null;
+            closeHowTo();
+            trumpet.changed();
+          },
+        },
+    ...freeButtons,
     {
       id: "view",
       label: VIEW_LABEL[trumpet.view],
@@ -494,6 +541,7 @@ export const Hud = () => {
     >
       <style>{CSS}</style>
       <style>{STRIP_CSS}</style>
+      <style>{SONG_CSS}</style>
       <div className="vl-root">
         {noCamera ? (
           <div
@@ -525,13 +573,13 @@ export const Hud = () => {
         />
         {trumpet.entered && !noCamera ? (
           <div
-            className={`tp-tag vl-glass ${hands.reading && !hidden ? "" : "vl-gone"}`}
+            className={`tp-tag vl-glass ${learning ? "show" : ""} ${(hands.reading || learning) && !hidden ? "" : "vl-gone"}`}
             data-hud="camera-sign"
             aria-live="polite"
             style={{ left: frame.left + 8, top: frame.top + frame.height - 32 }}
           >
-            <SignIcon sign={signOf(trumpet.choice)} size={18} />
-            <span>{label(trumpet.choice)}</span>
+            <SignIcon sign={signOf(tagged)} size={18} />
+            <span>{learning ? `Show ${label(tagged)}` : label(tagged)}</span>
           </div>
         ) : null}
         <button
@@ -599,6 +647,7 @@ export const Hud = () => {
         ) : null}
 
         {trumpet.entered ? <SignStrip /> : null}
+        {trumpet.entered ? <SongUI width={width} height={height} /> : null}
 
         {trumpet.beatCard ? (
           <div

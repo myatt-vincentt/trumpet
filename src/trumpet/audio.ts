@@ -140,6 +140,11 @@ export const sound = {
     return out;
   },
 
+  /** The audio clock and the output a backing joins (null before the sound is set up). */
+  audio() {
+    return ctx && master && unlocked ? { ctx, master } : null;
+  },
+
   /** The levels as last measured (by the studio, once a frame). */
   get last() {
     return out;

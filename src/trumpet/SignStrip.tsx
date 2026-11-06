@@ -2,7 +2,8 @@
 // sign, as you see your right hand held up to the camera: one to four
 // fingers for Do, Re, Mi and Fa, an open hand for Sol, the rock sign (index
 // and pinky up) for La, thumb and pinky out for Ti, and a fist to rest. The
-// chosen chip lights gold; it flashes on every note. Tap a chip to choose it.
+// chosen chip lights gold; it flashes on every note. In a song, the chip of
+// the note to play next glows gold. Tap a chip to choose it.
 import { useEffect, useRef } from "react";
 
 import {
@@ -35,6 +36,10 @@ export const STRIP_CSS = `
   transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 220ms cubic-bezier(0.22, 1, 0.36, 1); }
 .vl-chip:focus-visible { box-shadow: 0 0 0 2px ${GHOST_COLOR}; }
 .vl-chip.on { background: rgb(242 178 28 / .42); border-color: rgb(255 214 120 / .75); }
+.vl-chip.target::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 2px ${GHOST_COLOR}, 0 0 14px rgb(242 178 28 / .6); animation: vl-target 1100ms ease-out infinite; }
+@keyframes vl-target { from { opacity: 1; } to { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .vl-chip.target::after { animation: none; } }
 .vl-chip-glow { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: #fff6dc; }
 .vl-chip svg { position: relative; }
 .vl-chip-num { position: relative; font: 650 10px/1 system-ui, -apple-system, sans-serif; color: rgb(255 255 255 / .7); }
@@ -170,7 +175,7 @@ export const SignStrip = () => {
           <button
             key={chip.id}
             type="button"
-            className={`vl-chip ${on ? "on" : ""}`}
+            className={`vl-chip ${on ? "on" : ""} ${trumpet.target !== null && trumpet.target === chip.choice ? "target" : ""}`}
             data-hud={`sign-${chip.sign}`}
             aria-label={`${chip.label}${chip.sub ? ` (${chip.sub})` : ""}: ${chip.sign} sign`}
             aria-pressed={on}

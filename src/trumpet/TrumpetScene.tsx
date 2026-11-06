@@ -13,6 +13,8 @@
 //   Hands.tsx         your hand and its signs (signs.ts)
 //   AutoPlay.tsx      the trumpet plays the beat by itself (beat.ts) while
 //                     your hand is in view
+//   SongPlayer.tsx    songs to learn and play (session.ts, songs.ts, backing.ts);
+//                     their cards in SongUI.tsx
 //   PointerInput.tsx  the keys
 //   CameraFrame.tsx   your camera in the corner
 //   Hud.tsx           the bottom dock, the sign strip (SignStrip.tsx), how to play
@@ -30,6 +32,7 @@ import { GhostHand } from "./GhostHand";
 import { Hands } from "./Hands";
 import { Hud } from "./Hud";
 import { PointerInput } from "./PointerInput";
+import { SongPlayer } from "./SongPlayer";
 import { trumpet, useTrumpetVersion } from "./state";
 import { Studio } from "./Studio";
 import { Trumpet } from "./Trumpet";
@@ -60,6 +63,7 @@ export const TrumpetScene = () => {
       {trumpet.started ? <HandTracker targetFps={HAND_FPS} /> : null}
       <Hands />
       <AutoPlay />
+      <SongPlayer />
       <CameraFrame />
       <PointerInput />
       <Hud />

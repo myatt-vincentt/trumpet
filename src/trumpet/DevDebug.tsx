@@ -8,6 +8,7 @@
 //   __trumpet.view("player"), __trumpet.night(true)
 //   __trumpet.look([x, y, z], [tx, ty, tz], fov)   a fixed camera (null: back)
 //   __trumpet.useRecordings(false)  the voice made in code
+//   __trumpet.song("saints", "learn"), __trumpet.stopSong()   a song
 //   await __trumpet.render(60, 0.7, 1)  one recorded note rendered offline (samples)
 //
 // With ?debug in the address, a small readout in the top-left corner shows
@@ -32,6 +33,8 @@ import {
   show,
   trumpet,
 } from "./state";
+import type { Mode as SongMode } from "./session";
+import { startSong, stopSong } from "./SongPlayer";
 import { rig } from "./Trumpet";
 
 /** The ?debug readout: a plain text box, refreshed a few times a second. */
@@ -108,6 +111,8 @@ const DevDebug = () => {
       },
       octave: (o: Octave) => setOctave(o),
       useRecordings: (on: boolean) => sound.useRecordings(on),
+      song: (id: string, m: SongMode = "learn") => startSong(id, m),
+      stopSong: () => stopSong(),
       /** One recorded note (MIDI), rendered offline: its samples (mono, 48 kHz). */
       async render(midi: number, velocity = 0.7, length = 1) {
         const { bank } = samples;

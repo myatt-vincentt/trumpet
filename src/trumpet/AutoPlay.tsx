@@ -1,8 +1,10 @@
-// The trumpet plays by itself: while Play is on, it plays the chosen note in
-// the chosen pattern, in time (beat.ts). A new sign (or chip, or key) changes
-// the note on the next beat, even under a held note (it is tongued again on
-// the new note); the rest silences it on the next beat while the beat goes
-// on. Stopping lets the beat finish, then the note stops.
+// The trumpet plays by itself: while your hand is in view (or Play is on), it
+// plays the chosen note in the chosen pattern, in time (beat.ts). A new sign
+// (or chip, or key) changes the note on the next beat, even under a held note
+// (it is tongued again on the new note); the rest silences it on the next
+// beat while the beat goes on. Taking the hand away for half a second stops
+// the beat after the current beat, and the last note finishes (a held Long
+// note ends with the beat); bringing it back starts a new bar.
 //
 // Each note is handed to the audio clock about 0.1 s ahead, so the time stays
 // steady whatever the frame rate; the valves, the bell, the rings and the
@@ -12,11 +14,14 @@ import { useFrame } from "@react-three/fiber";
 
 import { sound } from "./audio";
 import { BeatScheduler } from "./beat";
+import { hands } from "./Hands";
 import { noteMidi, type Choice, type NoteId } from "./notes";
 import { show, silence, trumpet, type PlaySource } from "./state";
 
 /** Notes are handed to the audio clock this far ahead (s). */
 const AHEAD = 0.1;
+/** The hand out of view this long (s) stops the beat. */
+const LOST = 0.5;
 /** A change of note under a held note is tongued this hard. */
 const CHANGE_STRENGTH = 0.6;
 /** A held note must last at least this long past a beat (s) to change on it. */
@@ -50,7 +55,8 @@ export const AutoPlay = () => {
     const s = st.current;
     const perf = performance.now() / 1000;
     const { now } = sound;
-    const want = trumpet.entered && trumpet.autoPlay;
+    const want =
+      trumpet.entered && (trumpet.autoPlay || perf - hands.seenAt <= LOST);
 
     if (now !== null) {
       if (s.pattern !== trumpet.pattern || s.bpm !== trumpet.bpm) {
@@ -64,7 +70,8 @@ export const AutoPlay = () => {
       else beat.stop(now);
       const due = beat.next(now, AHEAD, trumpet.choice);
       const len = beat.beatLength;
-      const by: PlaySource = "pointer";
+      // (played by your hand closes the how-to card)
+      const by: PlaySource = trumpet.autoPlay ? "pointer" : "hands";
       const toPerf = (t: number) => perf + (t - now);
       // Notes and beats in time order; a note on a beat is that beat's.
       const onBeat = new Set(due.hits.map((h) => h.time.toFixed(4)));
@@ -131,8 +138,13 @@ export const AutoPlay = () => {
       due.beats.forEach((b) =>
         s.beats.push({ due: toPerf(b.time), downbeat: b.downbeat }),
       );
-      // The beat has stopped: a note still held stops with it.
-      if (!beat.running && s.sounding && s.sounding.until > now) {
+      // The beat has stopped: the last note finishes, but a note held past
+      // the next beat (Long) stops with the beat.
+      if (
+        !beat.running &&
+        s.sounding &&
+        s.sounding.until > now + beat.beatLength
+      ) {
         sound.stopAt(now);
         s.pending.push({ kind: "silence", due: perf });
         s.sounding = null;

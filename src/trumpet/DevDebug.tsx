@@ -11,7 +11,7 @@
 //   await __trumpet.render(60, 0.7, 1)  one recorded note rendered offline (samples)
 //
 // With ?debug in the address, a small readout in the top-left corner shows
-// the note, the beat and the sound.
+// the note, the beat, your hand and the sound.
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
@@ -20,6 +20,7 @@ import { meter, samples, sound } from "./audio";
 import { sampleVoice } from "./sampler";
 import { TEMPO, type PatternId } from "./beat";
 import { cameraOverride } from "./CameraRig";
+import { hands } from "./Hands";
 import type { View } from "./layout";
 import { noteMidi, type Choice, type NoteId, type Octave } from "./notes";
 import {
@@ -59,6 +60,7 @@ const useReadout = () => {
       box.textContent = [
         `note ${trumpet.choice}  octave ${trumpet.octave}  sounding ${trumpet.sounding ?? "-"}`,
         `beat ${trumpet.beating ? "running" : "stopped"} ${trumpet.pattern} ${trumpet.bpm} BPM  play ${yes(trumpet.autoPlay)}  last beat ${ago < 60 ? `${ago.toFixed(1)} s ago` : "-"}`,
+        `hand ${hands.tracked ? hands.side : "none"}  sign ${hands.rawSign ?? "-"} → ${hands.sign ?? "-"}`,
         `valves ${rig.press.map((p) => p.toFixed(2)).join(" ")}`,
         `sound ${sound.unlocked ? "on" : "off"} ${sound.voiceKind}  notes ${meter.count}  peak ${meter.peak.toFixed(2)}`,
       ].join("\n");
@@ -77,6 +79,8 @@ const DevDebug = () => {
   useEffect(() => {
     const api = {
       trumpet,
+      /** What the hand reading sees (tracked, which hand, the raw and held sign). */
+      hands,
       rig,
       camera,
       scene,

@@ -24,7 +24,8 @@ import {
   type XRModelNodeHandTracking,
 } from "@vincentt-xr/sdk/low-level";
 
-import { GHOST_COLOR, NOTE_HAND } from "./GhostHand";
+import { GHOST_COLOR } from "./GhostHand";
+import { hands as playing } from "./Hands";
 import { FRAME_RADIUS, frameRect } from "./layout";
 import { trumpet } from "./state";
 
@@ -233,8 +234,8 @@ export const CameraFrame = () => {
     u.camLinear.value = texture.colorSpace === SRGBColorSpace ? 1 : 0;
     const sh = shown.current;
     SIDES.forEach((side) => {
-      // Only the note hand is drawn.
-      const used = side === NOTE_HAND;
+      // Only the hand that plays is drawn.
+      const used = side === playing.side;
       const pose =
         trumpet.started && used ? (hands?.poses?.[side] ?? null) : null;
       const js = (side === "left" ? u.jL : u.jR).value as Vector2[];

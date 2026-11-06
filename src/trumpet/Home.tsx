@@ -158,7 +158,9 @@ export const Home = ({
           <Mark />
         </div>
         <h1 className="dh-title">Trumpet</h1>
-        <p className="dh-line">Play the trumpet with one hand</p>
+        <p className="dh-line">
+          Show a sign with one hand; the trumpet plays it
+        </p>
         <button
           type="button"
           data-hud="start"

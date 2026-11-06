@@ -6,8 +6,10 @@
 //     day / night, and how to play. A small label shows over a button on
 //     hover, or for a moment after a tap.
 //   - the sign strip just above the dock (SignStrip.tsx)
-//   - the how-to-play steps: your right hand and the eight signs (after
-//     Start, or from the dock)
+//   - over your camera, while your hand is read: a small gold tag with the
+//     sign and its note
+//   - the how-to-play steps: one hand and the eight signs (after Start, or
+//     from the dock)
 import {
   useEffect,
   useRef,
@@ -31,6 +33,7 @@ import {
   type View,
 } from "./layout";
 import { CHOICES, label, signOf } from "./notes";
+import { hands } from "./Hands";
 import { SignIcon, SignStrip, STRIP_CSS } from "./SignStrip";
 import {
   closeHowTo,
@@ -90,6 +93,10 @@ const CSS = `
   animation: vl-fade 260ms ${EASE} both; }
 .vl-nocam svg { flex: none; color: rgb(255 255 255 / .7); }
 .vl-gone { opacity: 0; pointer-events: none; }
+.tp-tag { position: absolute; display: flex; align-items: center; gap: 5px; padding: 4px 9px 4px 6px;
+  border-radius: 999px; pointer-events: none; color: #fff; font: 650 12px/1 system-ui, -apple-system, sans-serif;
+  transition: opacity 220ms ${EASE}; }
+.tp-tag svg { color: ${GHOST_COLOR}; }
 .vl-howto-back { position: absolute; inset: 0; pointer-events: auto; background: rgb(10 10 14 / .25);
   animation: vl-fade 260ms ${EASE} both; }
 @keyframes vl-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -213,21 +220,12 @@ const Pic = ({ children }: { children: ReactNode }) => (
   </svg>
 );
 
-/** Two open hands up inside the camera frame. */
-const PicHands = () => (
+/** One open hand up inside the camera frame. */
+const PicHand = () => (
   <Pic>
     <rect x="1.5" y="3.5" width="21" height="17" rx="3" opacity=".5" />
-    {[false, true].map((flip) => (
-      <path
-        key={String(flip)}
-        transform={flip ? "translate(24 0) scale(-1 1)" : undefined}
-        d="M10.5 17.5H8.2a2.2 2.2 0 0 1-2-1.3L4.6 13a.9.9 0 0 1 1.5-.9l1.2 1.3V8.3a.8.8 0 0 1 1.6 0v3V7a.8.8 0 0 1 1.6 0v4.3"
-      />
-    ))}
-    <path
-      d="M10.5 17.5v-6.2a.8.8 0 0 1 1.5 0M13.5 17.5v-6.2a.8.8 0 0 0-1.5 0"
-      opacity=".9"
-    />
+    <path d="M10 17.5v-6.2a1 1 0 0 1 2 0V6.5a1 1 0 0 1 2 0V11V5.5a1 1 0 0 1 2 0V11.5V7a1 1 0 0 1 2 0v6a4.5 4.5 0 0 1-4.5 4.5H12" />
+    <path d="M10 13.5l-1.6-1.4a.9.9 0 0 0-1.3 1.2l2.4 3.2" />
   </Pic>
 );
 /** A hand leaving the camera frame: stop. */
@@ -295,23 +293,27 @@ const OctaveIcon = () => (
 const STEPS: Step[] = [
   {
     key: "hand",
-    pic: <PicHands />,
-    text: "Hold your right hand up to the camera",
+    pic: <PicHand />,
+    text: "Hold one hand up to the camera (your right, or your left alone)",
   },
   {
     key: "signs",
     pic: <SignIcon sign="two" size={40} />,
-    text: "Show a sign for the note; the trumpet plays it on the beat",
+    text: "Show a sign for the note; the trumpet plays it on the beat by itself",
     tint: GHOST_COLOR,
     signs: true,
   },
   {
     key: "fist",
     pic: <PicFist />,
-    text: "Make a fist to rest",
+    text: "Thumb and pinky out is Ti; make a fist to rest",
     tint: GHOST_COLOR,
   },
-  { key: "away", pic: <PicAway />, text: "Take your hand away to stop" },
+  {
+    key: "away",
+    pic: <PicAway />,
+    text: "Take your hand away to stop; change the sign to change the note",
+  },
   {
     key: "pattern",
     pic: <PicPattern />,
@@ -521,6 +523,17 @@ export const Hud = () => {
           }}
           onClick={toggleCam}
         />
+        {trumpet.entered && !noCamera ? (
+          <div
+            className={`tp-tag vl-glass ${hands.reading && !hidden ? "" : "vl-gone"}`}
+            data-hud="camera-sign"
+            aria-live="polite"
+            style={{ left: frame.left + 8, top: frame.top + frame.height - 32 }}
+          >
+            <SignIcon sign={signOf(trumpet.choice)} size={18} />
+            <span>{label(trumpet.choice)}</span>
+          </div>
+        ) : null}
         <button
           type="button"
           data-hud="camera-show"

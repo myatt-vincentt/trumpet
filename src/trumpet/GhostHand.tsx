@@ -24,8 +24,6 @@ import { rig } from "./Trumpet";
 
 /** The ghost hand's gold (also your hand on the corner camera, and the chips). */
 export const GHOST_COLOR = "#F2B21C";
-/** The hand that shows the notes (as on your body). */
-export const NOTE_HAND: "left" | "right" = "right";
 
 const BASE = "TrumpetHand_Rest";
 const PRESSED = [
